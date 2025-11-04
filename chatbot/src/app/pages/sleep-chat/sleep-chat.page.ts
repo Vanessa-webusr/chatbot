@@ -24,33 +24,48 @@ export class SleepChatPage implements AfterViewInit {
   newChat: boolean = false;
 
 
-  constructor(private chat: ChatService, private route: ActivatedRoute, private router:Router) {
+  constructor(private chat: ChatService, private route: ActivatedRoute, private router: Router) {
     // this.route.queryParams.subscribe(params => {
     //   this.newChat = params['newChat'] === 'true'; //Garante que seja um valor booleano
     // });
   }
 
   ngOnInit() {
-      // 🔹 Observa mudanças nos parâmetros da rota
-  this.route.queryParams.subscribe(async (params) => {
-    const newChat = params['newChat'] === 'true';
-    if (newChat) {
-      await this.sendNewMessage();
-    } else {
-      try {
-      const history = await this.chat.getChatHistory(this.chatType);
-      this.messages = history.flatMap(h => [
-        { sender: 'user', text: h.message },
-        { sender: 'bot', text: h.response }
-      ]);
+    // 🔹 Observa mudanças nos parâmetros da rota
+    this.route.queryParams.subscribe(async (params) => {
+      const newChat = params['newChat'] === 'true';
+      if (newChat) {
+        this.userMessage = "Eu gostaria de conversar sobre meu sono."
+        try {
+          const history = await this.chat.getChatHistory(this.chatType);
+          this.messages = history.flatMap(h => [
+            { sender: 'user', text: h.message },
+            { sender: 'bot', text: h.response }
+          ]);
 
-    } catch (err) {
-      console.warn('Não foi possível carregar histórico', err);
-    }
+        } catch (err) {
+          console.warn('Não foi possível carregar histórico', err);
+        }
+        await this.sendNewMessage();
+        this.router.navigate([], {
+          queryParams: { newChat: null },
+          queryParamsHandling: 'merge'
+        });
+      } else {
+        try {
+          const history = await this.chat.getChatHistory(this.chatType);
+          this.messages = history.flatMap(h => [
+            { sender: 'user', text: h.message },
+            { sender: 'bot', text: h.response }
+          ]);
 
-    this.scrollToBottom();
-    }
-  });
+        } catch (err) {
+          console.warn('Não foi possível carregar histórico', err);
+        }
+
+        this.scrollToBottom();
+      }
+    });
   }
 
   async ngAfterViewInit() {
@@ -114,7 +129,6 @@ export class SleepChatPage implements AfterViewInit {
 
   async sendNewMessage() {
     this.newChat = false;
-    this.userMessage = "Eu gostaria de conversar sobre meu sono."
     const text = this.userMessage.trim();
     this.messages.push({ text, sender: 'user' });
     this.userMessage = '';
